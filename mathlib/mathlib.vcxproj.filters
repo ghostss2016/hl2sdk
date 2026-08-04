@@ -125,9 +125,6 @@
     <ClInclude Include="..\public\mathlib\ssequaternion.h">
       <Filter>Public Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\public\mathlib\vec3d.h">
-      <Filter>Public Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\public\mathlib\vector.h">
       <Filter>Public Header Files</Filter>
     </ClInclude>

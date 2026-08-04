@@ -324,7 +324,7 @@ struct KV3MetaData_t
 		m_Comments.Purge();
 	}
 
-	typedef CUtlOrderedMap<int, CBufferString> CommentsMap_t;
+	typedef CUtlMap<int, CBufferString, int, CDefLess<int>> CommentsMap_t;
 
 	int 			m_nLine;
 	int 			m_nColumn;
@@ -347,18 +347,12 @@ struct KV3BinaryBlob_t
 class CKV3MemberName
 {
 public:
-	template <size_t N>
-	inline CKV3MemberName( const char (&pszString)[N], UtlSymLargeId_t symid = UTL_INVAL_SYMBOL_LARGE ) : m_nHashCode( pszString ), m_SymId( symid ), m_pszString( pszString ) {}
-
-	// AMNOTE: Template is required to enforce compiler to pick the correct overload when inlining
-	// as otherwise non templated overload would always win the pick thus no const folding would happen
-	template <typename T, std::enable_if_t<std::is_same_v<T, const char *>, int> = 0>
-	inline CKV3MemberName( T pszString, UtlSymLargeId_t symid = UTL_INVAL_SYMBOL_LARGE ) : m_nHashCode( 0 ), m_SymId( symid ), m_pszString( "" )
-	{
-		if(!pszString || !pszString[0])
+	inline CKV3MemberName(const char* pszString, UtlSymLargeId_t symid = UTL_INVAL_SYMBOL_LARGE ): m_nHashCode(), m_SymId( symid ), m_pszString("")
+	{	
+		if (!pszString || !pszString[0])
 			return;
 
-		m_nHashCode = CUtlStringToken( pszString );
+		m_nHashCode = MakeStringToken( pszString );
 		m_pszString = pszString;
 	}
 
@@ -678,9 +672,9 @@ private:
 	uint64 m_bFreeArrayMemory : 1;
 	uint64 m_TypeEx : 8;
 	uint64 m_SubType : 8;
+	uint64 m_nFlags : 8;
 	uint64 m_nClusterElement : 16;
 	uint64 m_nNumArrayElements : 5;
-	uint64 m_nFlags : 8;
 	uint64 m_nReserved : 17;
 	Data_t m_Data;
 

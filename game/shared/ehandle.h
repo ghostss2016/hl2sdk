@@ -12,7 +12,6 @@
 #endif
 
 #include "entity2/entitysystem.h"
-#include "entity2/entityinstance.h"
 #include "entityhandle.h"
 
 // -------------------------------------------------------------------------------------------------- //

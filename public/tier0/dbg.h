@@ -14,6 +14,7 @@
 
 #include "tier0/platform.h"
 #include "tier0/basetypes.h"
+#include "tier1/strtools.h"
 #include "dbgflag.h"
 #include "logging.h"
 #include <math.h>
@@ -242,9 +243,6 @@ PLATFORM_INTERFACE void Msg( const tchar* pMsg, ... );
 PLATFORM_INTERFACE void Warning( const tchar *pMsg, ... ) FMTFUNCTION( 1, 2 );
 PLATFORM_INTERFACE void Warning_SpewCallStack( int iMaxCallStackLength, const tchar *pMsg, ... ) FMTFUNCTION( 2, 3 );
 
-// AMNOTE: Required for Error method, without including whole strtools.h
-PLATFORM_INTERFACE int V_vsnprintf( OUT_Z_CAP( maxLenInCharacters ) char *pDest, int maxLenInCharacters, PRINTF_FORMAT_STRING const char *pFormat, va_list params );
-
 // This is gone in Source2. Provide helper to roughly mimic Source1 behavior
 void Error( const tchar* pMsg, ... ) FMTFUNCTION( 1, 2 );
 inline void Error( const tchar* pMsg, ... )
@@ -254,7 +252,7 @@ inline void Error( const tchar* pMsg, ... )
 	va_start(params, pMsg);
 	V_vsnprintf(szBuffer, sizeof(szBuffer), pMsg, params);
 	va_end(params);
-	Plat_FatalError( "%s", szBuffer );
+	Plat_FatalErrorFunc( "%s", szBuffer );
 }
 
 // @TODO: these callstack spew functions are currently disabled in the new logging system.  Need to add support for these if desired.

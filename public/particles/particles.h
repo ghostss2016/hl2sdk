@@ -621,7 +621,7 @@ private:
 	// Particle system dictionary
 	CParticleSystemDictionary *m_pParticleSystemDictionary;
 	
-	// typedef CUtlOrderedMap< ITexture *, CSheet* > SheetsCache;
+	// typedef CUtlMap< ITexture *, CSheet* > SheetsCache;
 	typedef CUtlStringMap< CSheet* > SheetsCache_t;
 	SheetsCache_t m_SheetList;
 

@@ -22,19 +22,18 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "utlleanvector.h"
-#include "utlvector.h"
-
 // Forward declaration
 class CBufferString;
 class Vector;
 class Vector2D;
 class Vector4D;
-class VectorWS;
 class Quaternion;
 class Color;
 class QAngle;
 class CUtlString;
+
+template< class T, class I> class CUtlMemory;
+template< class T, class A> class CUtlVector;
 
 abstract_class IParsingErrorListener
 {
@@ -98,6 +97,11 @@ typedef char *  va_list;
 //-----------------------------------------------------------------------------
 // Portable versions of standard string functions
 //-----------------------------------------------------------------------------
+PLATFORM_INTERFACE void			V_tier0_memset( void *dest, int fill, size_t count );
+PLATFORM_INTERFACE void			V_tier0_memcpy( void *dest, const void *src, size_t count );
+PLATFORM_INTERFACE void			V_tier0_memmove( void *dest, const void *src, size_t count );
+PLATFORM_INTERFACE int			V_tier0_memcmp( const void *m1, const void *m2, size_t count );
+
 PLATFORM_INTERFACE int			V_tier0_strlen( const char *str );
 PLATFORM_INTERFACE int			V_tier0_strlen16( const uchar16 *str );
 PLATFORM_INTERFACE int			V_tier0_strlen32( const uchar32 *str );
@@ -278,6 +282,11 @@ inline bool V_isspace(char c) { return isspace( (unsigned char)c ) != 0; }
 PLATFORM_INTERFACE bool	V_iswspace( wchar_t c );
 
 // Short form remaps
+#define V_memset(dest, fill, count)		V_tier0_memset		((dest), (fill), (count))
+#define V_memcpy(dest, src, count)		V_tier0_memcpy		((dest), (src), (count))
+#define V_memmove(dest, src, count)		V_tier0_memmove		((dest), (src), (count))
+#define V_memcmp(m1, m2, count)			V_tier0_memcmp		((m1), (m2), (count))
+
 #define V_strlen(str)					V_tier0_strlen		((str))
 #define V_strlen16(str)					V_tier0_strlen16	((str))
 #define V_strlen32(str)					V_tier0_strlen32	((str))
@@ -346,9 +355,6 @@ PLATFORM_INTERFACE void V_StringToQAngle(const char *buf, QAngle &out_ang, bool 
 
 // Parses string into a Quaternion structure
 PLATFORM_INTERFACE void V_StringToQuaternion(const char *buf, Quaternion &out_quat, bool *successful = NULL, char **remainder = NULL, uint flags = PARSING_FLAG_NONE, IParsingErrorListener *err_listener = NULL);
-
-// Parses string into a VectorWS structure
-PLATFORM_INTERFACE void V_StringToVectorWS(const char *buf, VectorWS &out_vecws, bool *successful = NULL, char **remainder = NULL, uint flags = PARSING_FLAG_NONE, IParsingErrorListener *err_listener = NULL);
 
 // Parses string as a uint64 value, where if the value exceeds min/max limits (inclusive), the parsing fails and default_value is returned
 PLATFORM_INTERFACE uint64 V_StringToUint64Limit(const char *buf, uint64 min, uint64 max, uint64 default_value, bool *successful = NULL, char **remainder = NULL, uint flags = PARSING_FLAG_NONE, IParsingErrorListener *err_listener = NULL);
@@ -434,8 +440,6 @@ template <> inline bool V_StringToValue<QAngle>( const char *string, QAngle &val
 { bool success = false; V_StringToQAngle( string, value, &success, nullptr, flags ); return success; }
 template <> inline bool V_StringToValue<Quaternion>( const char *string, Quaternion &value, uint flags )
 { bool success = false; V_StringToQuaternion( string, value, &success, nullptr, flags ); return success; }
-template <> inline bool V_StringToValue<VectorWS>( const char *string, VectorWS &value, uint flags )
-{ bool success = false; V_StringToVectorWS( string, value, &success, nullptr, flags ); return success; }
 
 // returns string immediately following prefix, (ie str+strlen(prefix)) or NULL if prefix not found
 PLATFORM_INTERFACE const char *_V_StringAfterPrefix( const char *str, const char *prefix );
@@ -691,6 +695,17 @@ PLATFORM_INTERFACE bool V_IsAbsolutePath( const char *pPath );
 PLATFORM_INTERFACE bool _V_StrSubst( const char *pIn, const char *pMatch, const char *pReplaceWith,
 									 OUT_Z_CAP( outLen ) char *pOut, int outLen, bool bCaseSensitive=false );
 #define V_StrSubst _V_StrSubst
+
+// AM TODO: If possible, use CSplitString instead rn. 
+// These are exported by tier0, but will require changes to CUtlVector (additional template arg)
+// 
+// Split the specified string on the specified separator.
+// Returns a list of strings separated by pSeparator.
+// You are responsible for freeing the contents of outStrings (call outStrings.PurgeAndDeleteElements).
+PLATFORM_OVERLOAD void V_SplitString( const char *pString, const char *pSeparator, CUtlVector<CUtlString, CUtlMemory<CUtlString, int>> &outStrings, bool include_empty = false );
+
+// Just like V_SplitString, but it can use multiple possible separators.
+PLATFORM_OVERLOAD void V_SplitStringInPlace( char *pString, const char *pSeparator, CUtlVector<const char *, CUtlMemory<const char *, int>> &outStrings );
 
 // This function takes a slice out of pStr and stores it in pOut.
 // It follows the Python slice convention:
@@ -999,6 +1014,10 @@ PLATFORM_INTERFACE void V_CopyMemory3D(
 // We need to DLL-export the Q methods in vstdlib but not link to them in other projects
 #if !defined( VSTDLIB_BACKWARD_COMPAT )
 
+#define Q_memset				V_memset
+#define Q_memcpy				V_memcpy
+#define Q_memmove				V_memmove
+#define Q_memcmp				V_memcmp
 #define Q_strlen				V_strlen
 #define Q_strcpy				V_strcpy
 #define Q_strrchr				V_strrchr
@@ -1059,92 +1078,5 @@ PLATFORM_INTERFACE void V_CopyMemory3D(
 #define Q_FixupPathName			V_FixupPathName
 
 #endif // !defined( VSTDLIB_DLL_EXPORT )
-
-// Split the specified string on the specified separator.
-// Returns a list of strings separated by pSeparator.
-// You are responsible for freeing the contents of outStrings (call outStrings.PurgeAndDeleteElements).
-PLATFORM_OVERLOAD void V_SplitString( const char *pString, const char *pSeparator, CUtlVector<CUtlString> &outStrings, bool include_empty = false );
-
-// Just like V_SplitString, but it can use multiple possible separators.
-PLATFORM_OVERLOAD void V_SplitStringInPlace( char *pString, const char *pSeparator, CUtlLeanVector<const char *> &outStrings );
-
-// easy string list class with dynamically allocated strings. For use with V_SplitString, etc.
-// Frees the dynamic strings in destructor.
-class CUtlStringList : public CUtlVectorAutoPurge< char * >
-{
-public:
-	~CUtlStringList()
-	{
-		PurgeAndDeleteElements();
-	}
-
-	void CopyAndAddToTail( char const *pString )			// clone the string and add to the end
-	{
-		char *pNewStr = new char[1 + strlen( pString )];
-		V_strcpy( pNewStr, pString );
-		AddToTail( pNewStr );
-	}
-
-	static int __cdecl SortFunc( char *const *sz1, char *const *sz2 )
-	{
-		return strcmp( *sz1, *sz2 );
-	}
-
-	inline void PurgeAndDeleteElements()
-	{
-		for(int i = 0; i < m_Size; i++)
-		{
-			delete[] Element( i );
-		}
-		Purge();
-	}
-};
-
-class CSplitString : public CUtlVector< char * >
-{
-public:
-	// Splits the string based on separator provided
-	// Example: string "test;string string2;here" with a separator ";"
-	// results in [ "test", "string string2", "here" ] array entries.
-	// Separator can be multicharacter, i.e. "-;" would split string like
-	// "test-;string" into [ "test", "string" ]
-	CSplitString( const char *pString, const char *pSeparator, bool include_empty = false ) : m_szBuffer( nullptr ), m_nBufferSize( 0 )
-	{
-		Split( pString, -1, &pSeparator, 1, include_empty );
-	}
-
-	// Splits the string based on array of separators provided
-	// Example: string "test;string,string2;here" with a separators [ ";", "," ]
-	// results in [ "test", "string", "string2", "here" ] array entries.
-	// Separator can be multicharacter, i.e. "-;" would split string like
-	// "test-;string" into [ "test", "string" ]
-	CSplitString( const char *pString, const char **pSeparators, int nSeparators, bool include_empty = false ) : m_szBuffer( nullptr ), m_nBufferSize( 0 )
-	{
-		Split( pString, -1, pSeparators, nSeparators, include_empty );
-	}
-
-	~CSplitString()
-	{
-		if(m_szBuffer)
-			delete[] m_szBuffer;
-	}
-
-	// Works the same way as CSplitString::Split with the only exception that it allows you 
-	// to provide single string of separators like ";,:" which will then get used to separate string
-	// instead of providing an array of separators, but doesn't support multicharacter separators cuz of that!
-	DLL_CLASS_IMPORT void SetPacked( const char *pString, const char *pSeparators, bool include_empty = false, int stringSize = -1 );
-
-private:
-	DLL_CLASS_IMPORT void Split( const char *pString, int stringSize, const char **pSeparators, int nSeparators, bool include_empty = false );
-
-	void PurgeAndDeleteElements()
-	{
-		Purge();
-	}
-
-private:
-	char *m_szBuffer; // a copy of original string, with '\0' instead of separators
-	int m_nBufferSize;
-};
 
 #endif	// TIER1_STRTOOLS_H

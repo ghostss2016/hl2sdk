@@ -12,7 +12,7 @@
 
 #include <assert.h>
 #include <string.h>
-#include "utlvectormemory.h"
+#include "utlmemory.h"
 
 
 //-----------------------------------------------------------------------------
@@ -24,7 +24,7 @@
 // by index (they should *never* maintain pointers to elements in the stack).
 //-----------------------------------------------------------------------------
 
-template< class T, class M = CUtlVectorMemory_Growable< T > > 
+template< class T, class M = CUtlMemory< T > > 
 class CUtlStack
 {
 public:

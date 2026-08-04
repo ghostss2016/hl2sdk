@@ -11,13 +11,14 @@
 #endif
 
 
-#include "ray.h"
+#include "cmodel.h"
 #include "Color.h"
 #include "entity2/entityinstance.h"
 #include "mathlib/transform.h"
 #include "tier1/generichash.h"
 #include "tier1/utlvector.h"
 #include "tier1/utlstring.h"
+#include "ispatialpartition.h"
 
 class IPhysicsBody;
 class IPhysicsShape;
@@ -264,7 +265,7 @@ public:
 		m_sSurfaceProperty = m_tempSurfaceProp;
 
 		m_sBoneName = m_tempBoneName;
-		m_nBoneNameHash = CUtlStringToken( m_tempBoneName );
+		m_nBoneNameHash = MakeStringToken( m_tempBoneName );
 
 		m_cRenderColor.SetColor( 0, 0, 0, 0 );
 	}
@@ -489,7 +490,6 @@ public:
 		m_vHitPoint.Init();
 		m_flHitOffset = 0.0f;
 		m_flFraction = 1.0f;
-		m_unk001 = -1;
 		m_nTriangle = -1;
 		m_nHitboxBoneIndex = -1;
 		m_eRayType = RAY_TYPE_LINE;
@@ -524,8 +524,6 @@ public:
 	float m_flHitOffset;				// surface normal hit offset
 	float m_flFraction;					// time completed, 1.0 = didn't hit anything
 	
-	int32 m_unk001;
-
 	int32 m_nTriangle;					// the index of the triangle that was hit
 	int16 m_nHitboxBoneIndex; 			// the index of the hitbox bone that was hit
 	

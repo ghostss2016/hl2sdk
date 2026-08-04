@@ -15,7 +15,6 @@
 #pragma once
 #endif
 
-#include "mathlib.h"
 #include "commonmacros.h"
 #include "rawallocator.h"
 #include "tier0/platform.h"
@@ -891,22 +890,10 @@ void CUtlLeanVectorImpl<B, T, I>::DestructElements( T* pElement, const T* pEnd )
 		Destruct( pElement++ );
 }
 
-template < class T, class I = int, class A = CMemAllocAllocator >
-class CUtlLeanVector : public CUtlLeanVectorImpl< CUtlLeanVectorBase< T, I, A >, T, I >
-{
-	typedef CUtlLeanVectorImpl< CUtlLeanVectorBase< T, I, A >, T, I > BaseClass;
-public:
-
-	using BaseClass::BaseClass;
-};
+template < class T, class I = short, class A = CMemAllocAllocator >
+using CUtlLeanVector = CUtlLeanVectorImpl< CUtlLeanVectorBase< T, I, A >, T, I >;
 
 template < class T, size_t N = 3, class I = int, class A = CMemAllocAllocator >
-class CUtlLeanVectorFixedGrowable : public CUtlLeanVectorImpl< CUtlLeanVectorFixedGrowableBase< T, N, I, A >, T, I >
-{
-	typedef CUtlLeanVectorImpl< CUtlLeanVectorFixedGrowableBase< T, N, I, A >, T, I > BaseClass;
-public:
-
-	using BaseClass::BaseClass;
-};
+using CUtlLeanVectorFixedGrowable = CUtlLeanVectorImpl< CUtlLeanVectorFixedGrowableBase< T, N, I, A >, T, I >;
 
 #endif // UTLLEANVECTOR_H
