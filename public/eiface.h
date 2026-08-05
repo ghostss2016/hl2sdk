@@ -16,9 +16,8 @@
 #include "tier1/convar.h"
 #include "icvar.h"
 #include "edict.h"
+#include "globalvars.h"
 #include "mathlib/vplane.h"
-#include "iserverentity.h"
-#include "engine/ivmodelinfo.h"
 #include "soundflags.h"
 #include "bitvec.h"
 #include "tier1/bitbuf.h"
@@ -29,6 +28,9 @@
 #include "playerslot.h"
 #include <iloopmode.h>
 #include "network_connection.pb.h"
+#include "entityidentity.h"
+#include "checktransmitinfo.h"
+#include "networksystem/inetworksystem.h"
 
 //-----------------------------------------------------------------------------
 // forward declarations
@@ -230,10 +232,6 @@ public:
 	// Issue the specified command to the specified client (mimics that client typing the command at the console).
 	virtual void		ClientCommand( CPlayerSlot nSlot, const char *szFmt, ... ) FMTFUNCTION( 3, 4 ) = 0;
 
-	// Set the lightstyle to the specified value and network the change to any connected clients.  Note that val must not
-	//  change place in memory (use MAKE_STRING) for anything that's not compiled into your mod.
-	virtual void		LightStyle( int style, const char *val ) = 0;
-
 	// Print szMsg to the client console.
 	virtual void		ClientPrintf( CPlayerSlot nSlot, const char *szMsg ) = 0;
 
@@ -395,7 +393,7 @@ public:
 
 	virtual void			PreWorldUpdate( bool simulating ) = 0;
 
-	virtual CUtlMap<int, Entity2Networkable_t>	*GetEntity2Networkables( void ) const = 0;
+	virtual CUtlOrderedMap<int, Entity2Networkable_t, CDefLess<int>, unsigned short>	*GetEntity2Networkables( void ) const = 0;
 
 	virtual void			*GetEntityInfo() = 0;
 

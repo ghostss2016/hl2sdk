@@ -10,7 +10,6 @@
 #pragma once
 #endif
 
-#include <inetmsghandler.h>
 #include <edict.h>
 #include <resourcefile/resourcetype.h>
 #include <tier1/checksum_crc.h>
@@ -33,6 +32,7 @@ struct EventServerAdvanceTick_t;
 struct EventServerPollNetworking_t;
 struct EventServerProcessNetworking_t;
 struct EventServerSimulate_t;
+struct EventServerEndSimulate_t;
 struct EventServerPostSimulate_t;
 struct SpawnGroupDesc_t;
 class IPrerequisite;
@@ -44,9 +44,18 @@ class KeyValues3;
 class CSVCMsg_ServerInfo_t;
 class CServerSideClientBase;
 class C2S_CONNECT_Message;
+class CMsgVoiceAudio;
 
 typedef int ChallengeType_t;
 typedef int PauseGroup_t;
+
+class IConnectionlessPacketHandler
+{
+public:
+	virtual	~IConnectionlessPacketHandler( void ) {};
+
+	virtual bool ProcessConnectionlessPacket( const ns_address *addr, bf_read *bf ) = 0;	// process a connectionless packet
+};
 
 abstract_class INetworkGameServer 
 {
@@ -74,13 +83,12 @@ public:
 	// returns current client limit
 	virtual int		GetMaxClients( void ) const = 0;
 
-	virtual float   unk001() = 0;
-
 	virtual void	ServerAdvanceTick( const EventServerAdvanceTick_t & ) = 0;
 	virtual void	ServerPollNetworking( const EventServerPollNetworking_t & ) = 0;
 	virtual void	ServerProcessNetworking( const EventServerProcessNetworking_t & ) = 0;
 
 	virtual void	ServerSimulate( const EventServerSimulate_t & ) = 0;
+	virtual void	ServerEndSimulate( const EventServerEndSimulate_t & ) = 0;
 	virtual void	ServerPostSimulate( const EventServerPostSimulate_t & ) = 0;
 
 	virtual SpawnGroupHandle_t LoadSpawnGroup( const SpawnGroupDesc_t & ) = 0;
@@ -150,6 +158,7 @@ public:
 	virtual void 	DirectUpdate() = 0;
 
 	virtual int64	unk501() = 0;
+	virtual void	BroadcastEntityVoice( int entity, CMsgVoiceAudio *data, uint64 xuid ) = 0;
 };
 
 abstract_class CNetworkGameServerBase : public INetworkGameServer, protected IConnectionlessPacketHandler, public IConVarListener

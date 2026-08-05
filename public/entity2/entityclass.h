@@ -36,6 +36,19 @@ struct EntInput_t;
 struct EntOutput_t;
 struct datamap_t;
 
+typedef enum
+{
+	USE_OFF = 0,
+	USE_ON = 1,
+	USE_SET = 2,
+	USE_TOGGLE = 3
+} USE_TYPE;
+
+// AMNOTE: In action these are member function ptrs instead of raw pointers
+typedef void (*BASEPTR)(CEntityInstance *ent);
+typedef void (*ENTITYFUNCPTR)(CEntityInstance *pOther);
+typedef void (*USEPTR)(CEntityInstance *pActivator, CEntityInstance *pCaller, USE_TYPE useType, float value);
+
 struct EntClassComponentOverride_t
 {
 	const char* pszBaseComponent;
@@ -92,7 +105,8 @@ public:
 	}
 	
 public:
-	using FuncToNameCb = const char *(*)(void (*)(CEntityInstance *ent));
+	using FuncToNameCb = const char *(*)(BASEPTR think_fn);
+	using NameToFuncCb = BASEPTR (*)(const char *fn_name);
 
 	void *m_pScriptDesc;
 	CNetworkSerializerClassInfo *m_NetworkSerializerInfo;
@@ -103,10 +117,13 @@ public:
 	int m_nOutputCount;
 
 	CEntitySharedPulseSignature *m_pSharedPulseSignature;
-	void *m_unk101;
 
-	FuncToNameCb m_unk102;
-	FuncToNameCb m_unk103;
+	void *m_unk101;
+	// Allows to get any think functions in use or to get its string name for this class
+	// does searches to the parent classes as well
+	NameToFuncCb m_NameToThinkFunc;
+	FuncToNameCb m_ThinkFuncToName;
+	void *m_unk201;
 
 	EntClassComponentOverride_t* m_pComponentOverrides;
 	
