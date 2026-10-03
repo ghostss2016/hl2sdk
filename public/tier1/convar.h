@@ -238,9 +238,10 @@ struct CVarCreationBase_t
 											// Note: IVEngineClient::ClientCmd_Unrestricted can run any client command.
 
 #define FCVAR_EXECUTE_PER_TICK		(1ull<<29)
-
+#define FCVAR_SNAPSHOT_IGNORED		(1ull<<30) // TakeConVarSnapshot and ResetConVarsToSnapshot ignores cvars with this flag set
 #define FCVAR_DEFENSIVE				(1ull<<32)
 
+#define FCVAR_GAMEINFO_CANNOT_OVERRIDE (1ull<<34) // Code defaults can't be overridden from gameinfo
 
 //-----------------------------------------------------------------------------
 // Called when a ConCommand needs to execute
@@ -776,6 +777,7 @@ template<> void CvarTypeTrait_ValueToStringFn<Color>( const CVValue_t *obj, CBuf
 		buf.Format( "%d %d %d %d", obj->m_clrValue[0], obj->m_clrValue[1], obj->m_clrValue[2], obj->m_clrValue[3] );
 }
 
+template<> void CvarTypeTrait_ClampFn<bool>( CVValue_t *obj, const CVValue_t *min, const CVValue_t *max ) { }
 template<> void CvarTypeTrait_ClampFn<CUtlString>( CVValue_t *obj, const CVValue_t *min, const CVValue_t *max ) { }
 template<> void CvarTypeTrait_ClampFn<Color>( CVValue_t *obj, const CVValue_t *min, const CVValue_t *max )
 {
@@ -981,6 +983,7 @@ public:
 
 	// AMNOTE: Expects you to manually allocate its value and for it to be alive while it's used by the cvar
 	// Also you should be responsible for clearing memory on cleanup, by default game uses CCvar memory allocator for this
+	// These are ignored for string and bool types!
 	void SetMinValue( CVValue_t *value ) { m_minValue = value; }
 	void SetMaxValue( CVValue_t *value ) { m_maxValue = value; }
 
@@ -1552,6 +1555,68 @@ private:
 	T* m_pOwner;
 	FnMemberCommandCallback_t m_Func;
 	FnMemberCommandCompletionCallback_t m_CompletionFunc;
+};
+
+// AMNOTE: Shouldn't be used directly to create new concommands
+class ConCommandRegList
+{
+public:
+	friend void ConVar_Register( uint64 nCVarFlag, FnConVarRegisterCallback cvar_reg_cb, FnConCommandRegisterCallback cmd_reg_cb );
+	friend void ConVar_Unregister();
+	friend void SetupConCommand( ConCommand *cmd, const ConCommandCreation_t &info );
+
+	struct Entry_t
+	{
+		ConCommandCreation_t m_Info;
+		ConCommandRef *m_Command = nullptr;
+	};
+
+private:
+	static void RegisterConCommand( const Entry_t &cmd );
+	static void RegisterAll();
+	static void UnregisterAll();
+	static void AddToList( const Entry_t &cmd );
+
+public:
+	uint32 m_nSize;
+	Entry_t m_Entries[100];
+	ConCommandRegList *m_pPrev;
+
+private:
+	static bool s_bConCommandsRegistered;
+	static ConCommandRegList *s_pRoot;
+};
+
+// AMNOTE: Shouldn't be used directly to create new convars
+class ConVarRegList
+{
+public:
+	friend void ConVar_Register( uint64 nCVarFlag, FnConVarRegisterCallback cvar_reg_cb, FnConCommandRegisterCallback cmd_reg_cb );
+	friend void ConVar_Unregister();
+	friend void SetupConVar( ConVarRefAbstract *cvar, ConVarData **cvar_data, ConVarCreation_t &info );
+
+	struct Entry_t
+	{
+		ConVarCreation_t m_Info;
+
+		ConVarRefAbstract *m_pConVar = nullptr;
+		ConVarData **m_pConVarData = nullptr;
+	};
+
+private:
+	static void RegisterConVar( const Entry_t &cvar );
+	static void RegisterAll();
+	static void UnregisterAll();
+	static void AddToList( const Entry_t &cvar );
+
+public:
+	uint32 m_nSize;
+	Entry_t m_Entries[100];
+	ConVarRegList *m_pPrev;
+
+private:
+	static bool s_bConVarsRegistered;
+	static ConVarRegList *s_pRoot;
 };
 
 #ifdef _MSC_VER
