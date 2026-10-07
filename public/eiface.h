@@ -28,9 +28,10 @@
 #include "playerslot.h"
 #include <iloopmode.h>
 #include "network_connection.pb.h"
-#include "entityidentity.h"
+#include "entity2/entityidentity.h"
 #include "checktransmitinfo.h"
 #include "networksystem/inetworksystem.h"
+#include "resourcefile/resourcetype.h"
 
 //-----------------------------------------------------------------------------
 // forward declarations
@@ -70,8 +71,6 @@ struct Entity2Networkable_t;
 class CCreateGameServerLoadInfo;
 class INavListener;
 class CNavData;
-struct EconItemInfo_t;
-struct EconControlPointInfo_t;
 class CEntityHandle;
 struct RenderDeviceInfo_t;
 
@@ -95,6 +94,8 @@ struct vis_info_t;
 class IHLTVServer;
 class CCompressedResourceManifest;
 class ILoadingSpawnGroup;
+class KeyValues3;
+struct SaveGameParams_t;
 class IToolGameSimulationAPI;
 class CCLCMsg_Move;
 template <typename T>
@@ -187,7 +188,7 @@ public:
 	virtual void		SetFrameTimeAmnesty( const char *amnesty, int, float frametime ) = 0;
 	virtual const char *GetFrameTimeAmnesty( bool check_cvar ) = 0;
 
-	virtual void		unk101() = 0;
+	virtual void		unk101( const char *, int, int, float ) = 0;
 
 	virtual void		ShowFrameTimeReport( void *, bool ) = 0;
 
@@ -253,12 +254,12 @@ public:
 	virtual bool		IsLogEnabled() = 0;
 
 	virtual bool IsSplitScreenPlayer( CPlayerSlot nSlot ) = 0;
-	virtual edict_t *GetSplitScreenPlayerAttachToEdict( CPlayerSlot nSlot ) = 0;
-	virtual int	GetNumSplitScreenUsersAttachedToEdict( CPlayerSlot nSlot ) = 0;
-	virtual edict_t *GetSplitScreenPlayerForEdict( CPlayerSlot nSlot, int nSplitScreenSlot ) = 0;
+	virtual CPlayerSlot GetSplitScreenPlayerAttachToEdict( CPlayerSlot nSlot ) = 0;
+	virtual CPlayerSlot GetSplitScreenPlayerForEdict( CPlayerSlot nSlot, int nSplitScreenSlot ) = 0;
 
 	// Ret types might be all wrong for these. Haven't researched yet.
 	virtual void	UnloadSpawnGroup( SpawnGroupHandle_t spawnGroup, /*ESpawnGroupUnloadOption*/ int) = 0;
+	virtual SpawnGroupHandle_t LoadSpawnGroup( const SpawnGroupDesc_t & ) = 0;
 	virtual void	SetSpawnGroupDescription( SpawnGroupHandle_t spawnGroup, const char *pszDescription ) = 0;
 	virtual bool	IsSpawnGroupLoaded( SpawnGroupHandle_t spawnGroup ) const = 0;
 	virtual bool	IsSpawnGroupLoading( SpawnGroupHandle_t spawnGroup ) const = 0;
@@ -454,28 +455,29 @@ public:
 	virtual void			PreFatalShutdown( void ) const = 0;
 	virtual void			UpdateWhenNotInGame( float flFrameTime ) = 0;
 
-	virtual void			GetEconItemNamesForModel( const char *pModelName, bool bExcludeItemSets, bool bExcludeIndividualItems, CUtlVector<CUtlString> &econItemNames ) = 0;
-	virtual void			GetEconItemNamesForCharacter( const char *pCharacterName, bool bExcludeItemSets, bool bExcludeIndividualItems, CUtlVector<CUtlString> &econItemNames ) = 0;
-	virtual void			GetEconItemsInfoForModel( const char *pModelName, const char *pEconItemName, bool bExcludeItemSets, bool bExcludeIndividualItems, bool bExcludeStockItemSet, CUtlVector<EconItemInfo_t> &econInfo ) = 0;
-	virtual void			GetEconItemsInfoForCharacter( const char *pCharacterName, const char *pEconItemName, bool bExcludeItemSets, bool bExcludeIndividualItems, bool bExcludeStockItemSet, CUtlVector<EconItemInfo_t> &econInfo ) = 0;
-
-	virtual void			GetDefaultScaleForModel( const char *pModelName, bool bCheckLoadoutScale ) = 0;
-	virtual void			GetDefaultScaleForCharacter( const char *pCharacterName, bool bCheckLoadoutScale ) = 0;
-	virtual void			GetDefaultControlPointAutoUpdates( const char *pParticleSystemName, CUtlVector<EconControlPointInfo_t> &autoUpdates ) = 0;
-
-	virtual void			unk_201() = 0;
-
-	virtual void			GetCharacterNameForModel( const char *pModelName, bool bCheckItemModifiers, CUtlString &characterName ) = 0;
-	virtual void			GetModelNameForCharacter( const char *pCharacterNamel, int nIndex, CBufferString &modelName ) = 0;
-	virtual void			GetCharacterList( CUtlVector<CUtlString> &characterNames ) = 0;
-	virtual void			GetDefaultChoreoDirForModel( const char *pModelName, CBufferString &defaultVCDDir ) = 0;
-
 	virtual void			*GetEconItemSystem( void ) = 0;
 
 	virtual void			ServerConVarChanged( const char *pVarName, const char *pValue ) = 0;
 
 	// Returns a list of values and names corresponding to HitGroup_t enum
 	virtual void			GetHitGroupEnumInfo( CUtlVector<int> &values, CUtlVector<CUtlString> &names ) = 0;
+
+	virtual void			unk_101( KeyValues3 *pKV ) = 0;
+
+	virtual bool			unk_102( const char *pszSaveName, CUtlString &fileName ) = 0;
+	virtual bool			unk_103( const char *pszSaveName, CUtlString &requiredAddons ) = 0;
+	virtual void			GetLevelsFromSaveFile( const char *pszSaveName, CUtlVector<CCreateGameServerLoadInfo> &levels, bool bWipeAndExtract, int, CUtlString *pComment ) = 0;
+	virtual void			unk_201( void ) = 0;
+	virtual void			PreSaveGameLoaded( const char *pszSaveName ) = 0;
+	virtual void			AppendSaveGameResources( HGameResourceManifest hManifest, ILoadingSpawnGroup *pLoadingSpawnGroup, SpawnGroupHandle_t hSpawnGroup, const void * ) = 0;
+	virtual void			AppendTransitionResources( HGameResourceManifest hManifest, ILoadingSpawnGroup *pLoadingSpawnGroup, SpawnGroupHandle_t hSpawnGroup, const void * ) = 0;
+	virtual /*SaveGameResult_t*/ int SaveGame( const SaveGameParams_t &params ) = 0;
+	virtual bool			unk_301( void ) = 0;
+	virtual bool			unk_302( void ) = 0;
+	virtual bool			unk_303( void ) = 0;
+	virtual void			FinishAsyncSave( void ) = 0;
+
+	virtual const char		*GetEntityUniqueHammerID( CEntityIndex nEntityIndex ) = 0;
 };
 
 //-----------------------------------------------------------------------------
@@ -512,7 +514,7 @@ public:
 	
 	virtual bool			GetWorldspaceCenter( CEntityIndex nEntityIndex, Vector *pCenter ) const = 0;
 
-	virtual void			OnPrePackEntities( CUtlVector<Entity2Networkable_t *> ents ) const = 0;
+	virtual void			OnPrePackEntities( const CUtlVector<Entity2Networkable_t *> &ents ) const = 0;
 };
 
 #define INTERFACEVERSION_SERVERCONFIG			"Source2ServerConfig001"
@@ -526,24 +528,18 @@ public:
 
 	virtual int			GetNetworkVersion( void ) = 0;
 
-	// Get the simulation interval (must be compiled with identical values into both client and game .dll for MOD!!!)
-	// Right now this is only requested at server startup time so it can't be changed on the fly, etc.
-	virtual float			GetTickInterval( void ) const = 0;
-
 	// Get server maxplayers and lower bound for same
-	virtual void			GetPlayerLimits( int& minplayers, int& maxplayers, int &defaultMaxPlayers, bool &bIsMultiplayer ) const = 0;
+	virtual void		GetPlayerLimits( int& minplayers, int& maxplayers, int &defaultMaxPlayers, bool &bIsMultiplayer ) const = 0;
 
 	// Returns max splitscreen slot count ( 1 == no splits, 2 for 2-player split screen )
-	virtual int		GetMaxSplitscreenPlayers( void ) = 0;
+	virtual int			GetMaxSplitscreenPlayers( void ) = 0;
 
 	// Return # of human slots, -1 if can't determine or don't care (engine will assume it's == maxplayers )
-	virtual int				GetMaxHumanPlayers() = 0;
+	virtual int			GetMaxHumanPlayers() = 0;
 
-	virtual bool			ShouldNotifyLocalClientConnectionStateChanges() = 0;
+	virtual bool		ShouldNotifyLocalClientConnectionStateChanges() = 0;
 
-	virtual bool			AllowPlayerToTakeOverBots() = 0;
-
-	virtual void			OnClientFullyConnect( CEntityIndex nEntityIndex ) = 0;
+	virtual void		OnClientFullyConnect( CEntityIndex nEntityIndex ) = 0;
 
 	virtual void		GetHostStateLoopModeInfo( HostStateLoopModeType_t type, CUtlString &loopModeName, KeyValues **ppLoopModeOptions ) = 0;
 
@@ -552,6 +548,16 @@ public:
 	virtual void		GetConVarPrefixesToResetToDefaults( CUtlString &sSemicolonDelimitedPrefixList ) const = 0;
 
 	virtual bool		AllowSaveRestore() = 0;
+
+	virtual bool		unk101() = 0;
+
+	virtual bool		IsCommandQueueEnabled() = 0;
+	virtual float		GetCommandQueueDilationPercentage() = 0;
+
+	virtual bool		unk201() = 0;
+	virtual bool		unk202() = 0;
+	virtual bool		unk203() = 0;
+	virtual bool 		unk204() = 0;
 };
 
 #define INTERFACEVERSION_SERVERGAMECLIENTS		"Source2GameClients001"
@@ -650,6 +656,8 @@ public:
 	virtual void			unk201() = 0;
 	virtual void			unk202() = 0;
 	virtual void			unk203() = 0;
+	virtual bool			unk204( const char *, CBufferString * ) = 0;
+	virtual bool			unk205( CPlayerSlot, int ) = 0;
 };
 
 typedef IVEngineServer2 IVEngineServer;

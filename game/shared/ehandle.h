@@ -24,7 +24,7 @@ inline CEntityInstance* CEntityHandle::Get() const
 	return GameEntitySystem()->GetEntityInstance( *this );
 }
 
-inline CEntityHandle CEntityHandle::FromPackedInt( int packed_int_handle )
+inline CEntityHandle CEntityHandle::FromPackedInt( uint32 packed_int_handle )
 {
 	if(packed_int_handle == 0xFFFFFF)
 		return CEntityHandle();
@@ -71,6 +71,7 @@ public:
 	bool	operator==( T *val ) const;
 	bool	operator!=( T *val ) const;
 	const CBaseHandle& operator=( const T *val );
+	const CBaseHandle& operator=( const CBaseHandle &val );
 
 	T*		operator->() const;
 };
@@ -165,6 +166,13 @@ template<class T>
 inline const CBaseHandle& CHandle<T>::operator=( const T *val )
 {
 	Set( val );
+	return *this;
+}
+
+template<class T>
+inline const CBaseHandle &CHandle<T>::operator=( const CBaseHandle &val )
+{
+	Init( val.GetEntryIndex(), val.GetSerialNumber() );
 	return *this;
 }
 

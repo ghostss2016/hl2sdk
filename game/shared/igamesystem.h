@@ -13,6 +13,9 @@
 
 #include "network_connection.pb.h"
 #include "iloopmode.h"
+#include "entityhandle.h"
+#include "entity2/entityidentity.h"
+#include "tier1/utlstring.h"
 
 /*
 * AMNOTE: To create your own gamesystem, you need to inherit from CBaseGameSystem or CAutoGameSystem,
@@ -219,8 +222,7 @@ GS_EVENT_MSG( ClientPostAdvanceTick ) {};
 
 GS_EVENT_MSG( ServerBeginAsyncPostTickWork )
 {
-	// AMNOTE: Also is set on gpGlobals->m_unk301
-	bool m_unk001;
+	bool m_bIsOncePerFrameAsyncWorkPhase;
 };
 
 GS_EVENT_MSG( ServerPreEndAsyncPostTickWork ) {};
@@ -385,10 +387,10 @@ public:
 
 // Quick and dirty server system for users who don't care about precise ordering
 // and usually only want to implement a few of the callbacks
-class CBaseGameSystem : public IGameSystem
+class CAutoGameSystem : public IGameSystem
 {
 public:
-	CBaseGameSystem(const char* pszInitName = "unnamed")
+	CAutoGameSystem(const char* pszInitName = "unnamed")
 	 :  m_pName(pszInitName)
 	{
 	}
@@ -489,16 +491,13 @@ public:
 	virtual void SetGameSystemGlobalPtrs(void* pValue) override {}
 	virtual void SetName(const char* pName) override { m_pName = pName; }
 	virtual bool DoesGameSystemReallocate() override { return false; }
-	virtual ~CBaseGameSystem() {}
+	virtual ~CAutoGameSystem() {}
 
 private:
 	const char* m_pName;
 };
 
-class CAutoGameSystem : public CBaseGameSystem
-{
-protected:
-	virtual ~CAutoGameSystem() {};
-};
+// AMNOTE: Deprecated, use CAutoGameSystem instead
+using CBaseGameSystem = CAutoGameSystem;
 
 #endif // IGAMESYSTEM_H
